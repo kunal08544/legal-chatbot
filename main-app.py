@@ -9,7 +9,14 @@ import os
 from dotenv import load_dotenv
 
 # LangChain dependencies
-from langchain_huggingface import HuggingFaceEmbeddings
+# Try alternative import paths
+try:
+    from langchain_huggingface import HuggingFaceEmbeddings
+except ImportError:
+    try:
+        from langchain.embeddings.huggingface import HuggingFaceEmbeddings
+    except ImportError:
+        from langchain.embeddings import HuggingFaceEmbeddings
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langchain_groq import ChatGroq
 from langchain_community.vectorstores import FAISS
