@@ -1,12 +1,11 @@
 import time
 import streamlit as st
-import PyPDF2
-import docx
-import io
 import spacy
-from typing import List
 import os
 from dotenv import load_dotenv
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objs as go
 
 # LangChain dependencies
 # Try alternative import paths
@@ -38,67 +37,186 @@ st.set_page_config(
     layout="wide"
 )
 
-# Document processing functions
-def read_pdf(file):
-    pdf_reader = PyPDF2.PdfReader(file)
-    text = ""
-    for page in pdf_reader.pages:
-        text += page.extract_text() + "\n"
-    return text
-
-def read_docx(file):
-    doc = docx.Document(io.BytesIO(file.getvalue()))
-    text = ""
-    for paragraph in doc.paragraphs:
-        text += paragraph.text + "\n"
-    return text
-
-def read_txt(file):
-    return file.getvalue().decode("utf-8")
-
-def analyze_legal_document(text):
-    doc = nlp(text)
+# Add new function for legal insights
+def create_advanced_legal_insights_tab():
+    st.header("🏛️ Comprehensive Legal Insights Platform")
     
-    # Extract legal entities and sections
-    legal_entities = {
-        'ORGANIZATIONS': [],
-        'DATES': [],
-        'MONEY': [],
-        'PERSONS': [],
-        'LAWS': []
-    }
+    # Enhanced sections with advanced legal technology features
+    sections = [
+        "Judicial Performance Analytics",
+        "Constitutional Rights Navigator",
+        "Legal Risk Assessment", 
+        "Landmark Judgments Analyzer",
+        "Legal Trend Forecaster"
+    ]
     
-    for ent in doc.ents:
-        if ent.label_ == "ORG":
-            legal_entities['ORGANIZATIONS'].append(ent.text)
-        elif ent.label_ == "DATE":
-            legal_entities['DATES'].append(ent.text)
-        elif ent.label_ == "MONEY":
-            legal_entities['MONEY'].append(ent.text)
-        elif ent.label_ == "PERSON":
-            legal_entities['PERSONS'].append(ent.text)
-        elif ent.label_ == "LAW":
-            legal_entities['LAWS'].append(ent.text)
+    selected_section = st.selectbox("Choose Legal Insight Domain", sections)
     
-    # Generate summary
-    sentences = list(doc.sents)
-    summary = " ".join([sent.text for sent in sentences[:3]])
+    if selected_section == "Judicial Performance Analytics":
+        st.subheader("Indian Judiciary Performance Dashboard")
+        
+        # Supreme Court and High Court Performance Metrics
+        court_performance = {
+            'Court': ['Supreme Court', 'Delhi High Court', 'Bombay High Court', 'Calcutta High Court'],
+            'Pending Cases': [70000, 45000, 60000, 55000],
+            'Disposal Rate (%)': [65, 72, 68, 70],
+            'Average Case Duration (Months)': [36, 24, 30, 28]
+        }
+        df_performance = pd.DataFrame(court_performance)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            fig_pending = px.bar(
+                df_performance, 
+                x='Court', 
+                y='Pending Cases', 
+                title='Pending Cases by Court',
+                color='Disposal Rate (%)',
+                color_continuous_scale='RdYlGn_r'
+            )
+            st.plotly_chart(fig_pending)
+        
+        with col2:
+            fig_duration = px.bar(
+                df_performance, 
+                x='Court', 
+                y='Average Case Duration (Months)', 
+                title='Case Resolution Duration',
+                color='Disposal Rate (%)',
+                color_continuous_scale='RdYlGn'
+            )
+            st.plotly_chart(fig_duration)
+        
+        # Case Complexity Heatmap
+        st.subheader("Case Complexity Analysis")
+        complexity_data = {
+            'Case Type': ['Criminal', 'Civil', 'Corporate', 'Constitutional', 'Labor'],
+            'Complexity Score': [8.5, 7.2, 6.8, 9.1, 6.5],
+            'Resolution Time (Months)': [48, 36, 24, 60, 18],
+            'Success Probability (%)': [45, 55, 60, 40, 65]
+        }
+        df_complexity = pd.DataFrame(complexity_data)
+        
+        fig_complexity = px.scatter(
+            df_complexity, 
+            x='Complexity Score', 
+            y='Resolution Time (Months)', 
+            size='Success Probability (%)',
+            color='Case Type',
+            hover_name='Case Type',
+            title='Legal Case Complexity Matrix',
+            labels={'Complexity Score': 'Complexity Index', 'Resolution Time (Months)': 'Average Resolution Duration'}
+        )
+        st.plotly_chart(fig_complexity)
     
-    # Extract potential legal sections mentioned
-    legal_keywords = ["section", "article", "regulation", "act", "law", "statute"]
-    legal_references = []
+    elif selected_section == "Constitutional Rights Navigator":
+        st.subheader("Indian Constitutional Rights Explorer")
+        
+        rights_categories = {
+            "Fundamental Rights": [
+                "Right to Equality (Article 14-18)",
+                "Right to Freedom (Article 19-22)",
+                "Right against Exploitation (Article 23-24)",
+                "Right to Freedom of Religion (Article 25-28)",
+                "Cultural and Educational Rights (Article 29-30)"
+            ],
+            "Directive Principles": [
+                "Social Justice (Article 38)",
+                "Right to Work (Article 41)",
+                "Right to Education (Article 45)",
+                "Protection of Environment (Article 48A)"
+            ]
+        }
+        
+        for category, rights in rights_categories.items():
+            st.markdown(f"**{category}:**")
+            for right in rights:
+                st.markdown(f"• {right}")
     
-    for token in doc:
-        if token.text.lower() in legal_keywords:
-            # Get the surrounding context
-            context = doc[max(0, token.i-5):min(len(doc), token.i+10)].text
-            legal_references.append(context)
+    elif selected_section == "Legal Risk Assessment":
+        st.subheader("Legal Risk Probability Calculator")
+        
+        risk_factors = {
+            "Evidence Strength": st.slider("Evidence Strength", 0, 10, 5),
+            "Legal Precedence": st.slider("Legal Precedence", 0, 10, 5),
+            "Litigation Complexity": st.slider("Litigation Complexity", 0, 10, 5)
+        }
+        
+        total_score = sum(risk_factors.values())
+        risk_probability = min((total_score / 30) * 100, 100)
+        
+        risk_color = "green" if risk_probability < 30 else "yellow" if risk_probability < 60 else "red"
+        
+        st.markdown(f"""
+        ### Risk Assessment Result
+        **Estimated Legal Risk Probability:** 
+        <span style='color:{risk_color}'>{risk_probability:.2f}%</span>
+        """, unsafe_allow_html=True)
     
-    return {
-        'summary': summary,
-        'entities': legal_entities,
-        'legal_references': legal_references[:5]  # Top 5 legal references
-    }
+    elif selected_section == "Landmark Judgments Analyzer":
+        st.subheader("Significant Indian Legal Precedents")
+        
+        landmark_cases = {
+            "Kesavananda Bharati Case": "Defined Basic Structure Doctrine of Constitution",
+            "Maneka Gandhi Case": "Expanded Scope of Personal Liberty",
+            "Shah Bano Case": "Discussed Alimony Rights",
+            "Right to Privacy Case": "Declared Privacy as Fundamental Right"
+        }
+        
+        selected_case = st.selectbox("Select Landmark Case", list(landmark_cases.keys()))
+        
+        if selected_case:
+            st.write(f"**Summary:** {landmark_cases[selected_case]}")
+            
+            # Additional details can be added here
+            st.markdown("### Key Implications")
+            st.markdown("- Significant judicial interpretation")
+            st.markdown("- Established important legal principles")
+    
+    elif selected_section == "Legal Trend Forecaster":
+        st.subheader("Legal Trends and Predictive Analysis")
+        
+        trend_areas = [
+            "Corporate Law",
+            "Intellectual Property",
+            "Technology and Cyber Laws",
+            "Environmental Regulations"
+        ]
+        
+        selected_trend = st.selectbox("Select Trend Area", trend_areas)
+        
+        trend_data = {
+            "Corporate Law": {
+                "Growth Potential": 75,
+                "Key Drivers": ["Digitalization", "Global Compliance"],
+                "Emerging Focus": "ESG Compliance"
+            },
+            "Intellectual Property": {
+                "Growth Potential": 65,
+                "Key Drivers": ["Tech Innovation", "Startup Ecosystem"],
+                "Emerging Focus": "AI and Patent Laws"
+            },
+            "Technology and Cyber Laws": {
+                "Growth Potential": 85,
+                "Key Drivers": ["Digital Transformation", "Data Protection"],
+                "Emerging Focus": "AI Regulation"
+            },
+            "Environmental Regulations": {
+                "Growth Potential": 60,
+                "Key Drivers": ["Climate Change", "Sustainability"],
+                "Emerging Focus": "Carbon Neutrality"
+            }
+        }
+        
+        if selected_trend:
+            trend_info = trend_data[selected_trend]
+            st.metric("Growth Potential", f"{trend_info['Growth Potential']}%")
+            
+            st.markdown("### Key Drivers")
+            for driver in trend_info['Key Drivers']:
+                st.markdown(f"• {driver}")
+            
+            st.markdown(f"### Emerging Focus: {trend_info['Emerging Focus']}")
 
 # Load environment variables and setup
 load_dotenv()
@@ -181,11 +299,11 @@ conversational_rag_chain = create_retrieval_chain(history_aware_retriever, qa_ch
 def main():
     st.title("Legal Assistant Pro")
     
-    # Create tabs for chat and document analysis
-    tab1, tab2 = st.tabs(["💬 Chat", "📄 Document Analysis"])
+    # Create tabs for chat and legal insights
+    tab1, tab2 = st.tabs(["💬 Legal Chat", "🏛️ Legal Insights"])
     
     with tab1:
-        # Your existing chat interface
+        # Chat interface
         for message in st.session_state.messages:
             with st.chat_message(message.type):
                 st.write(message.content)
@@ -225,54 +343,8 @@ def main():
             ])
 
     with tab2:
-        st.header("Legal Document Analysis")
-        st.markdown("Upload your legal document for analysis (Max 200MB)")
-        
-        uploaded_file = st.file_uploader(
-            "Choose a file",
-            type=['pdf', 'docx', 'txt'],
-            help="Supported formats: PDF, Word, and plain text",
-            accept_multiple_files=False
-        )
-        
-        if uploaded_file:
-            if uploaded_file.size > 200 * 1024 * 1024:  # 200MB limit
-                st.error("File size exceeds 200MB limit. Please upload a smaller file.")
-            else:
-                with st.spinner("Analyzing document..."):
-                    try:
-                        # Read the document based on its type
-                        if uploaded_file.type == "application/pdf":
-                            text = read_pdf(uploaded_file)
-                        elif uploaded_file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-                            text = read_docx(uploaded_file)
-                        else:
-                            text = read_txt(uploaded_file)
-                        
-                        # Analyze the document
-                        analysis = analyze_legal_document(text)
-                        
-                        # Display results in an organized manner
-                        st.subheader("Document Summary")
-                        st.write(analysis['summary'])
-                        
-                        st.subheader("Key Legal References")
-                        if analysis['legal_references']:
-                            for ref in analysis['legal_references']:
-                                st.markdown(f"• {ref}")
-                        else:
-                            st.info("No specific legal references found.")
-                        
-                        st.subheader("Entities Found")
-                        cols = st.columns(2)
-                        for i, (entity_type, entities) in enumerate(analysis['entities'].items()):
-                            with cols[i % 2]:
-                                if entities:
-                                    st.markdown(f"**{entity_type}**")
-                                    st.write(", ".join(set(entities)))
-                        
-                    except Exception as e:
-                        st.error(f"Error processing document: {str(e)}")
+        # Legal Insights Tab
+        create_advanced_legal_insights_tab()
 
 if __name__ == "__main__":
     main()
